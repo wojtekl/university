@@ -25,3 +25,16 @@
       (cons (przechowaj odd? (car lista)) (zadanie3 (cdr lista))))) ;odd- wyrażenie warunkowe(nieparzysty),
                                                                     ;cons -- dwuargumentowy konstruktor pary
 (zadanie3 (list '(1 5 4 6) '(1 2 3 4) '(7 9 11 12)))
+
+
+(define (przechowaj-spelniajace-predykat lst pred)
+        (if(null? lst) '()
+        (if(pred (car lst)) (car lst) (przechowaj-spelniajace-predykat
+(cdr lst) pred))
+        )
+)
+(przechowaj-spelniajace-predykat '(1 2 3) (lambda (x) (if(> x 2) #t #f)))
+
+(define (stworz-dodaj x) (lambda (y) (+ x y)))
+((stworz-dodaj 3)5)
+
