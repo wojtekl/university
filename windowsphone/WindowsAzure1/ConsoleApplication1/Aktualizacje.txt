@@ -1,0 +1,2 @@
+﻿Enable-Migrations -EnableAutomaticMigrations
+Update-Database
