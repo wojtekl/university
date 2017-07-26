@@ -377,7 +377,7 @@ przerwanie_13h_obsluga:
   sti
   pushf
 ; wykonywane przy odczycie sektora pierwszego
-  cmp ah, (P13H_SEKTOR_ODCZYTAJ shr 2)
+  cmp ah, (P13H_SEKTOR_ODCZYTAJ shr 8)
   jne przerwanie_13h_obsluga_koniec
   cmp dh, 0h
   jne przerwanie_13h_obsluga_koniec
