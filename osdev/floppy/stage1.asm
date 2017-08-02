@@ -3,7 +3,7 @@ org 7c00h
 
 P13H_SEKTOR_ODCZYTAJ equ 02h
 
-jmp far 0000h:start
+jmp dword 0000h:start
 
 start:
   mov ax, 2000h
@@ -18,7 +18,7 @@ start:
   mov dh, 0h
   int 13h
   
-  jmp far 2000h:0000h
+  jmp dword 2000h:0000h
 
 if ($ - $$) > 512
   "Za duzy plik!"
