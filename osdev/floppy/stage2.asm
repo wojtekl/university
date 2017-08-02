@@ -1,6 +1,15 @@
 use16
 org 0000h
 
+EKRAN_TEKST_ADRES_16BIT equ 0b800h
+EKRAN_TEKST_ADRES_32BIT equ 0b8000h
+
+CR0_32BIT equ 1h
+CR0_PAGING equ 1h shl 31
+CR4_PAE equ 1h shl 5
+IA32_EFER_MSR_ADRES equ 0c0000080h
+IA32_EFER_MSR_LONG_MODE equ 1h shl 8
+
 start:
   mov ax, 2000h
   mov ds, ax
@@ -9,16 +18,15 @@ start:
   mov ss, ax
   xor sp, sp
   
-  mov ax, 0b800h
+  mov ax, EKRAN_TEKST_ADRES_16BIT
   mov fs, ax
   mov bx, 0h
   mov ax, 4141h
   mov [fs:bx], ax
   
-; przejscie w tryb 32bit
   lgdt [GDT_addr]
   mov eax, cr0
-  or eax, 1h
+  or eax, CR0_32BIT
   mov cr0, eax
   jmp fword 00000008h:(00020000h + start32)
   
@@ -29,24 +37,24 @@ use32
   mov es, ax
   mov ss, ax
   
-  lea eax, [0b8000h]
+  lea eax, [EKRAN_TEKST_ADRES_32BIT]
   mov dword [eax], 41414141h
   
   mov eax, (PML4 - $$) + 20000h
   mov cr3, eax
   
   mov eax, cr4
-  or eax, (1 shl 5)
+  or eax, CR4_PAE
   mov cr4, eax
   
-  mov ecx, 0c0000080h
+  mov ecx, IA32_EFER_MSR_ADRES
   rdmsr
-  or eax, (1 shl 8)
+  or eax, IA32_EFER_MSR_LONG_MODE
   wrmsr
   
 ; wlaczenie pagingu
   mov eax, cr0
-  or eax, (1 shl 31)
+  or eax, CR0_PAGING
   mov cr0, eax
   
   lgdt [GDT64_addr + 20000h]
@@ -59,15 +67,15 @@ use64
   mov es, ax
   mov ss, ax
   
-  mov rax, 0b8000h
+  mov rax, EKRAN_TEKST_ADRES_32BIT
   mov rdx, 4242424242424242h
   mov [rax], rdx
   
 ; wczytanie elfa
 loader:
-  mov rsi, [20000h + kernel + 20h]
+  mov rsi, [dword 20000h + kernel + 20h]
   add rsi, 20000h + kernel
-  movzx ecx, word [20000h + kernel + 38h]
+  movzx ecx, word [dword 20000h + kernel + 38h]
   cld
   xor r14, r14
 ph_loop:
@@ -83,7 +91,7 @@ ph_loop:
 skip:
   mov rbp, rsi
   mov r15, rcx
-  lea rsi, [20000h + kernel + r8d]
+  lea rsi, [dword 20000h + kernel + r8d]
   mov rdi, r9
   mov rcx, r10
   rep movsb
@@ -95,7 +103,7 @@ next:
     
   mov rsp, 30f000h
   mov rdi, r14
-  mov rax, [20000h + kernel + 18h]
+  mov rax, [dword 20000h + kernel + 18h]
   call rax
   
 jmp $
