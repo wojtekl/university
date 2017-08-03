@@ -15,9 +15,11 @@ def fix_stage1_size():
     d[idx + 1] = stage2_size
     f.seek(0)
     f.write(d)
+    
+cc_flags = "-std=c99 -nostdlib -o kernel64 -O3 -Wall -Wextra -masm=intel"
 
 cmds_to_run = [
-  "gcc kernel.c -std=c99 -nostdlib -o kernel64",
+  "gcc kernel.c " + cc_flags,
   "strip kernel64",
   "/./home/uzytkownik/praca/github/nauka/fasm/fasm stage2.asm",
   "/./home/uzytkownik/praca/github/nauka/fasm/fasm stage1.asm",
