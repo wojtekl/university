@@ -11,6 +11,16 @@ IA32_EFER_MSR_ADRES equ 0c0000080h
 IA32_EFER_MSR_LONG_MODE equ 1h shl 8
 
 start:
+; wlaczenie A20
+  mov ax, 2401h
+  int 15h
+  in al, 92h
+  or al, 2h
+  out 92h, al
+
+; wylaczenie przerwan
+  cli
+  
   mov ax, 2000h
   mov ds, ax
   mov es, ax
@@ -85,23 +95,36 @@ ph_loop:
   mov r8, [rsi + 8h]
   mov r9, [rsi + 10h]
   mov r10, [rsi + 20h]
+  mov r11, [rsi + 28h]
   test r14, r14
   jnz skip
   mov r14, r9
 skip:
+; kopia rejestrow
   mov rbp, rsi
   mov r15, rcx
+; zerowanie pamieci
+  mov rdi, r9
+  mov rcx, r11
+  xor al, al
+; przerwanie bochsa
+  xchg bx, bx
+  rep stosb
+; kopiowanie segmentu
   lea rsi, [dword 20000h + kernel + r8d]
   mov rdi, r9
   mov rcx, r10
   rep movsb
+; przywrocenie rejestrow
   mov rcx, r15
   mov rsi, rbp
 next:
-  add rsi, 20h
+  add rsi, 38h
   loop ph_loop
-    
+  
+; ustawienie stosu
   mov rsp, 30f000h
+; skok do kernela
   mov rdi, r14
   mov rax, [dword 20000h + kernel + 18h]
   call rax
@@ -151,10 +174,23 @@ times (4096 - ($ - $$) mod 4096) db 0h
 PML4:
   dq 1 or (1 shl 1) or (PDPTE - $$ + 20000h)
   times 511 dq 0h
-  
+
+; 1GB pages
+;PDPTE:
+;  dq 1 or (1 shl 1) or (1 shl 7)
+;  times 511 dq 0h
+
+; 2MB pages
 PDPTE:
-  dq 1 or (1 shl 1) or (1 shl 7)
+  dq 1 or (1 shl 1) or (PDT - $$ + 20000h)
   times 511 dq 0h
+  
+PDT:
+i = 0
+repeat 512
+  dq 200000h * i + 83h
+  i = i + 1
+end repeat
   
 times (512 - ($ - $$) mod 512) db 0h
 

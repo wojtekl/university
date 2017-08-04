@@ -6,6 +6,11 @@ P13H_SEKTOR_ODCZYTAJ equ 02h
 jmp dword 0000h:start
 
 start:
+  mov ax, 0b800h
+  mov es, ax
+  xor di, di
+  mov word [es:di], 4141h
+  
   mov ax, 2000h
   mov es, ax
   xor bx, bx

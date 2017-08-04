@@ -1,4 +1,3 @@
-
 #define UNUSED(a) (void)(a);
 
 enum
@@ -132,6 +131,8 @@ void B8000_PutText(const char *s)
   }
 }
 
+unsigned long long k;
+
 void _start(void* kernel_location)
 {
   UNUSED(kernel_location);
@@ -140,7 +141,19 @@ void _start(void* kernel_location)
   B8000_PutText("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\t\tXXXXXXX");
   
   char *textvram = (char*)0xB8000;
-  unsigned long long addr = (unsigned long long)kernel_location;
+  
+  unsigned long long x = 0x345678;
+  unsigned long long y = 0x245678;
+  
+  int *ptr_x = (int*)x;
+  int *ptr_y = (int*)y;
+  
+  *ptr_x = 0x41414141;
+  
+  // unsigned long long addr = (unsigned long long)*ptr_y;
+  
+  // unsigned long long addr = (unsigned long long)kernel_location;
+  unsigned long long addr = (unsigned long long)k;
   for(int i = 0; i < 16; ++i)
   {
     textvram[i * 2] = "0123456789ABCDEF"[(addr >> 60) & 0xf];
