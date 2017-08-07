@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os
 import subprocess
+from glob import glob
 
 def fix_stage1_size():
   stage2_size = os.stat("stage2.bin").st_size
@@ -16,15 +17,24 @@ def fix_stage1_size():
     f.seek(0)
     f.write(d)
     
-cc_flags = "-std=c99 -nostdlib -o kernel64 -O3 -Wall -Wextra -masm=intel"
+cmds_to_run =[]
+    
+cc_flags = "-std=c99 -nostdlib -c -O3 -Wall -Wextra -masm=intel"
+ld_flags = "-std=c99 -nostdlib -o kernel64 -O3 -Wall -Wextra -masm=intel"
 
-cmds_to_run = [
-  "gcc kernel.c " + cc_flags,
+objfiles = []
+
+for fname in glob("*.c") :
+  cmds_to_run.append("gcc %s %s" % (fname, cc_flags))
+  objfiles.append("%s.o" % os.path.splitext(fname)[0])
+
+cmds_to_run.extend([
+  "gcc %s %s" % (' '.join(objfiles), ld_flags),
   "strip kernel64",
   "/./home/uzytkownik/praca/github/nauka/fasm/fasm stage2.asm",
   "/./home/uzytkownik/praca/github/nauka/fasm/fasm stage1.asm",
   fix_stage1_size
-]
+])
 
 files_to_img = [
   "stage1.bin",
