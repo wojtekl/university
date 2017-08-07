@@ -17,7 +17,7 @@ def fix_stage1_size():
     f.seek(0)
     f.write(d)
     
-cmds_to_run =[]
+cmds_to_run = []
     
 cc_flags = "-std=c99 -nostdlib -c -O3 -Wall -Wextra -masm=intel -ggdb"
 ld_flags = "-std=c99 -nostdlib -o kernel64 -O3 -Wall -Wextra -masm=intel -ggdb"

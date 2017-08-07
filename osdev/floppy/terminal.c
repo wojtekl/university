@@ -1,6 +1,6 @@
 #include <stdarg.h>
-#include "terminal.h"
 #include "common.h"
+#include "terminal.h"
 
 void T_SetCursorPosition(TerminalBackend *tb, uint16_t x, uint16_t y)
 {
@@ -86,7 +86,7 @@ void T_GetSize(TerminalBackend *tb, uint16_t *w, uint16_t *h)
 
 void T_PrintChar(TerminalBackend *tb, char ch)
 {
-  char buf[4] = {ch, '\0'};
+  char buf[2] = {ch, '\0'};
   T_PutText(tb, buf);
 }
 
@@ -99,7 +99,7 @@ void T_PrintUInt(TerminalBackend *tb, size_t n)
   }
   
   char buf[24] = {0};
-  char *p = &buf[23];
+  char *p = &buf[24];
   while(0 != n)
   {
     --p;
