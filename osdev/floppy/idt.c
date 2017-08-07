@@ -10,7 +10,7 @@ struct IDTEntry
   uint16_t offset_31_16;
   uint32_t offset_63_32;
   uint32_t reserved;
-} __attribute__((packed)) ;
+} __attribute__((packed));
 
 typedef struct IDTEntry IDTEntry;
 
@@ -18,16 +18,16 @@ typedef struct IDTEntry IDTEntry;
   (ist | (type << 8) | (dpl << 13) | (p << 15))
   
 #define OFFSET_15_0(func) ((uint64_t)func & 0xffff)
-#define OFFSET_31_16(func) ((uint64_t)func & 0xffff0000)
+#define OFFSET_31_16(func) (((uint64_t)func & 0xffff0000) >> 16)
 #define OFFSET_63_32(func) ((uint64_t)func >> 32)
 
-#define IDTITEM(e, func, ist) \
-{ \
-  e.offset_15_0 = OFFSET_15_0(func); \
-  e.seg_selector = 0x8; \
-  e.flags = IDTFLAGS(ist, 0xE, 0, 1); \
-  e.offset_31_16 = OFFSET_31_16(func); \
-  e.offset_63_32 = OFFSET_63_32(func); \
+#define IDTITEM(e, func, ist)\
+{\
+  e.offset_15_0 = OFFSET_15_0(func);\
+  e.seg_selector = 0x8;\
+  e.flags = IDTFLAGS(ist, 0xE, 0, 1);\
+  e.offset_31_16 = OFFSET_31_16(func);\
+  e.offset_63_32 = OFFSET_63_32(func);\
 }
 
 IDTEntry IDT[256];
@@ -36,7 +36,7 @@ struct IDTPtr
 {
   uint16_t limit;
   uint64_t ptr;
-} __attribute__((packed)) ;
+} __attribute__((packed));
 
 typedef struct IDTPtr IDTPtr;
 
@@ -50,6 +50,9 @@ void SetIDTR(void)
     (uint64_t)&IDT
   };
   
-  __asm("lidt %0" : : "m"(ptr));
+  __asm
+  (
+    "lidt %0" : : "m"(ptr)
+  );
 }
 
