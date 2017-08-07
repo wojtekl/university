@@ -11,7 +11,8 @@ void _start(void* kernel_location)
   TerminalBackend *con = TerminalBackendB8000();
   
   T_ClearScreen(con);
-  T_PutText(con, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\t\tXXXXXXX");
+  T_PutText(con, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\t\tXXXXXXX\n");
+  T_Printf(con, "%p %x %i %s %c %u\n", con, 0x41424344, -1234LL, "alamakota", 'X', 1234567890123LL);
   
   char *textvram = (char*)0xB8000;
   
@@ -22,6 +23,8 @@ void _start(void* kernel_location)
   int *ptr_y = (int*)y;
   
   *ptr_x = 0x41414141;
+  
+  UNUSED(ptr_y);
   
   // unsigned long long addr = (unsigned long long)*ptr_y;
   

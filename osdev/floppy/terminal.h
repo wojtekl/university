@@ -27,4 +27,5 @@ void T_PutText(TerminalBackend *tb, const char *s);
 void T_ClearScreen(TerminalBackend *tb);
 void T_PutCharacter(TerminalBackend *tb, uint32_t ch);
 void T_GetSize(TerminalBackend *tb, uint16_t *w, uint16_t *h);
+void T_Printf(TerminalBackend *tb, const char *fnt, ...);
 

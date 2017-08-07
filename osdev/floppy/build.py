@@ -19,8 +19,8 @@ def fix_stage1_size():
     
 cmds_to_run =[]
     
-cc_flags = "-std=c99 -nostdlib -c -O3 -Wall -Wextra -masm=intel"
-ld_flags = "-std=c99 -nostdlib -o kernel64 -O3 -Wall -Wextra -masm=intel"
+cc_flags = "-std=c99 -nostdlib -c -O3 -Wall -Wextra -masm=intel -ggdb"
+ld_flags = "-std=c99 -nostdlib -o kernel64 -O3 -Wall -Wextra -masm=intel -ggdb"
 
 objfiles = []
 

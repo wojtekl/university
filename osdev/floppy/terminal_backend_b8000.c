@@ -93,7 +93,7 @@ static void B8000_GetCursorPosition(TerminalBackend *tb, uint16_t *x, uint16_t *
   *y = B8000_Context.y;
 }
 
-static TerminalBackend B8000_Functions =
+static const TerminalBackend B8000_Functions =
 {
   .func_set_cursor_position = B8000_SetCursorPosition,
   .func_get_cursor_position = B8000_GetCursorPosition,
@@ -104,6 +104,6 @@ static TerminalBackend B8000_Functions =
 
 TerminalBackend *TerminalBackendB8000(void)
 {
-  return &B8000_Functions;
+  return (TerminalBackend*)&B8000_Functions;
 }
 
