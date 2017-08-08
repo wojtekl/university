@@ -49,6 +49,8 @@ void _start(void* kernel_location)
       : "r" (a), "d" (a), "a" (a)
   );
   
+  T_PutText(con, "It came back!");
+  
   for(;;);
 }
 

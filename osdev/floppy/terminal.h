@@ -9,6 +9,7 @@ typedef void (*TBfunc_GetCursorPosition)(TerminalBackend *tb, uint16_t *x, uint1
 typedef void (*TBfunc_ClearScreen)(TerminalBackend *tb);
 typedef void (*TBfunc_PutCharacter)(TerminalBackend *tb, uint32_t ch);
 typedef void (*TBfunc_GetSize)(TerminalBackend *tb, uint16_t *w, uint16_t *h);
+typedef void (*TBfunc_ScrollLine)(TerminalBackend *tb);
 
 struct TerminalBackend
 {
@@ -17,7 +18,8 @@ struct TerminalBackend
   TBfunc_ClearScreen func_clear_screen;
   TBfunc_PutCharacter func_put_character;
   TBfunc_GetSize func_get_size;
-  void *user_data;
+  TBfunc_ScrollLine func_scroll_line;
+  void *backend_data;
 };
 
 void T_SetCursorPosition(TerminalBackend *tb, unsigned short x, unsigned short y);
@@ -28,4 +30,5 @@ void T_ClearScreen(TerminalBackend *tb);
 void T_PutCharacter(TerminalBackend *tb, uint32_t ch);
 void T_GetSize(TerminalBackend *tb, uint16_t *w, uint16_t *h);
 void T_Printf(TerminalBackend *tb, const char *fnt, ...);
+void T_ScrollLine(TerminalBackend *tb);
 

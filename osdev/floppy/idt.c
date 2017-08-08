@@ -40,9 +40,11 @@ struct IDTPtr
 
 typedef struct IDTPtr IDTPtr;
 
+extern void Int_Wrapper_DE(void);
+
 void SetIDTR(void)
 {
-  IDTITEM(IDT[0], Int_DE, 0);
+  IDTITEM(IDT[0], Int_Wrapper_DE, 0);
   
   IDTPtr ptr = 
   {

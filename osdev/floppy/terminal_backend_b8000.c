@@ -1,6 +1,7 @@
-#include "terminal.h"
 #include "common.h"
+#include "crt.h"
 #include "hal.h"
+#include "terminal.h"
 
 enum
 {
@@ -20,6 +21,8 @@ static struct B8000_ContextStruct
   unsigned short y;
 }
 B8000_Context;
+
+static void B8000_ScrollLine(TerminalBackend *tb);
 
 static void B8000_SetCursorPosition(TerminalBackend *tb, uint16_t x, uint16_t y)
 {
@@ -63,6 +66,13 @@ static void B8000_PutCharacter(TerminalBackend *tb, uint32_t ch)
   unsigned short x = B8000_Context.x;
   unsigned short y = B8000_Context.y;
   
+  if(25 == y)
+  {
+    B8000_ScrollLine(tb);
+    x = B8000_Context.x;
+    y = B8000_Context.y;
+  }
+  
   unsigned int offset = x + y * 80;
   textvram[offset * 2 + 0] = (unsigned char)ch;
   textvram[offset * 2 + 1] = 0x0A;
@@ -93,13 +103,27 @@ static void B8000_GetCursorPosition(TerminalBackend *tb, uint16_t *x, uint16_t *
   *y = B8000_Context.y;
 }
 
+static void B8000_ScrollLine(TerminalBackend *tb)
+{
+  unsigned char *textvram = (unsigned char*)0xB8000;
+  memmove(textvram, textvram + 80 * 2, 80 * (25 - 1) * 2);
+  // memset(textvram + 80 * (25 - 1) * 2, ' ', 80 * 2);
+  for(size_t i = 80 * (25 - 1) * 2; i < 80 * 25 * 2; i += 2)
+  {
+    textvram[i + 0] = ' ';
+    textvram[i + 1] = 0x0A;
+  }
+  B8000_SetCursorPosition(tb, 0, 25 - 1);
+}
+
 static const TerminalBackend B8000_Functions =
 {
   .func_set_cursor_position = B8000_SetCursorPosition,
   .func_get_cursor_position = B8000_GetCursorPosition,
   .func_clear_screen = B8000_ClearScreen,
   .func_put_character = B8000_PutCharacter,
-  .func_get_size = B8000_GetSize
+  .func_get_size = B8000_GetSize,
+  .func_scroll_line = B8000_ScrollLine
 };
 
 TerminalBackend *TerminalBackendB8000(void)

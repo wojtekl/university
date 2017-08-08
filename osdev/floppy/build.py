@@ -28,6 +28,12 @@ for fname in glob("*.c") :
   cmds_to_run.append("gcc %s %s" % (fname, cc_flags))
   objfiles.append("%s.o" % os.path.splitext(fname)[0])
 
+as_flags = "-masm=intel -ggdb -c"
+
+for fname in glob("*.s") :
+  cmds_to_run.append("gcc %s %s" % (fname, as_flags))
+  objfiles.append("%s.o" % os.path.splitext(fname)[0])
+
 cmds_to_run.extend([
   "gcc %s %s" % (' '.join(objfiles), ld_flags),
   "strip kernel64",
