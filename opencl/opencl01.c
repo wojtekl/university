@@ -1,8 +1,9 @@
 #include <stdio.h>
-#include "CL/cl.h"
 #include <time.h>
+#include "CL/cl.h"
 
-void wypelnij_losowymi(const size_t d, cl_int *w)
+void wypelnij_losowymi(const size_t d, cl_int * 
+  const w)
 {
   for(size_t i = 0; i < d; ++i)
   {
@@ -10,8 +11,8 @@ void wypelnij_losowymi(const size_t d, cl_int *w)
   }
 }
 
-const char const *dodaj = "\
-__kernel void dodaj(int d, __global int *a,\
+const char * dodaj = "\
+__kernel void dodaj(int d, __global int *a, \
   __global int *b, __global int *c)\
 {\
   int i = get_global_id(0);\
@@ -21,11 +22,11 @@ __kernel void dodaj(int d, __global int *a,\
   }\
 }\
 ";
-const size_t dodajRozmiar = 157;
-const char const *dodajNazwa = "dodaj";
+const size_t dodajRozmiar = 158;
+const char * const dodajNazwa = "dodaj";
 
-int main(const int argc, const char const * const 
-  *argv)
+int main(const int argc, const char * const * const 
+  argv)
 {
   cl_int rezultat = CL_SUCCESS;
   cl_uint platformLiczba = 0;
@@ -37,18 +38,18 @@ int main(const int argc, const char const * const
       OpenCL!\n");
     return 0;
   }
-  cl_platform_id *platformIDs = malloc(
+  cl_platform_id * const platformIDs = malloc(
     platformLiczba * sizeof(cl_platform_id));
   rezultat = clGetPlatformIDs(platformLiczba, 
     platformIDs, NULL);
-  cl_uint *deviceLiczba = malloc(
+  cl_uint * const deviceLiczba = malloc(
     platformLiczba * sizeof(cl_uint));
-  cl_device_id **deviceIDs = malloc(
+  cl_device_id * * const deviceIDs = malloc(
     platformLiczba * sizeof(cl_platform_id));
   char tekst[1024] = {'\0'};
   for(cl_uint i = 0; i < platformLiczba; ++i)
   {
-    const cl_platform_id const *platformID = 
+    const cl_platform_id * const platformID = 
       &platformIDs[i];
     printf("###\n");
     printf("Platforma %u\n", i);
@@ -60,7 +61,7 @@ int main(const int argc, const char const * const
     printf("Producent: %s\n", tekst);
     printf("---\n");
     
-    cl_uint *w = &deviceLiczba[i];
+    cl_uint * const w = &deviceLiczba[i];
     rezultat = clGetDeviceIDs(*platformID, 
       CL_DEVICE_TYPE_GPU, 0, NULL, w);
     if(1 > *w)
@@ -74,7 +75,7 @@ int main(const int argc, const char const * const
       CL_DEVICE_TYPE_GPU, *w, deviceIDs[i], w);
     for(cl_uint j = 0; j < *w; ++j)
     {
-      const cl_device_id const *deviceID = 
+      const cl_device_id * const deviceID = 
         &deviceIDs[i][j];
       printf("Urządzenie %u\n", j);
       rezultat = clGetDeviceInfo(*deviceID, 
@@ -93,17 +94,18 @@ int main(const int argc, const char const * const
     free(platformIDs);
   }
   
+  const size_t rozmiarInt = sizeof(cl_int);
+  const size_t rozmiarMem = sizeof(cl_mem);
   const size_t platforma = 0;
   const size_t urzadzenie = 0;
   size_t localWorkSize = 8;
-  const size_t rozmiarInt = sizeof(cl_int);
-  const size_t rozmiarMem = sizeof(cl_mem);
   const size_t d = 32;
-  cl_int *a = malloc(d * rozmiarInt);
+  
+  cl_int * const a = malloc(d * rozmiarInt);
   wypelnij_losowymi(d, a);
-  cl_int *b = malloc(d * rozmiarInt);
+  cl_int * const b = malloc(d * rozmiarInt);
   wypelnij_losowymi(d, b);
-  cl_int *c = malloc(d * rozmiarInt);
+  cl_int * const c = malloc(d * rozmiarInt);
   
   const cl_context context = clCreateContext(0, 
     deviceLiczba[platforma], deviceIDs[platforma], 
