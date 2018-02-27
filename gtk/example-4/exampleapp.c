@@ -26,7 +26,7 @@ static void example_app_open(GApplication *app,
   GFile **files, gint n_files, const gchar *hint)
 {
   GList *windows;
-  ExmapleAppWindow *win;
+  ExampleAppWindow *win;
   int i;
   
   windows = gtk_application_get_windows(
@@ -42,7 +42,7 @@ static void example_app_open(GApplication *app,
   gtk_window_present(GTK_WINDOW(win));
 }
 
-static void example_app_class_init(ExampeAppClass *class)
+static void example_app_class_init(ExampleAppClass *class)
 {
   G_APPLICATION_CLASS(class)->activate = 
     example_app_activate;
