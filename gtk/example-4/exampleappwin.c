@@ -13,6 +13,7 @@ typedef struct _ExampleAppWindowPrivate
 
 struct _ExampleAppWindowPrivate
 {
+  GSettings *settings;
   GtkWidget *stack;
 };
 
@@ -21,7 +22,15 @@ G_DEFINE_TYPE_WITH_PRIVATE(ExampleAppWindow,
 
 static void example_app_window_init(ExampleAppWindow *win)
 {
+  ExampleAppWindowPrivate *priv;
+  
+  priv = example_app_window_get_instance_private(win);
   gtk_widget_init_template(GTK_WIDGET(win));
+  priv->settings = g_settings_new("org.gtk.exampleapp");
+  
+  g_settings_bind(priv->settings, "transition", 
+    priv->stack, "transition-type", 
+    G_SETTINGS_BIND_DEFAULT);
 }
 
 static void example_app_window_class_init(ExampleAppWindowClass *class)
