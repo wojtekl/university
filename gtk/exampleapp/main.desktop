@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=Example-4
+Name=Example App
 Icon=tvm-dev-pocketpc
 StartupNotify=true
-Exec=./example-4
+Exec=./main
 

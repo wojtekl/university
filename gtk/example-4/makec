@@ -1,8 +1,0 @@
-#!/bin/bash
-
-glib-compile-resources exampleapp.gresource.xml --target=resources.c --generate-source
-wynik=$(echo $1 | sed -e "s/\..*//")
-gcc --std=c11 --pedantic -Wall -Wextra `pkg-config --cflags gtk+-3.0` *.c -o $wynik `pkg-config --libs gtk+-3.0`
-glib-compile-schemas .
-GSETTINGS_SCHEMA_DIR=. ./example-4 example-4.c exampleapp.h
-
