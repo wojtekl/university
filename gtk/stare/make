@@ -1,4 +1,0 @@
-#!/bin/bash
-
-wynik=$(echo $1 | sed -e "s/\..*//")
-gcc $1 `pkg-config --cflags --libs gtk+-3.0` -o $wynik
