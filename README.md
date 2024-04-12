@@ -1,8 +1,6 @@
-# nauka
-learning
+# University
 
 ## AUTHORS
-wojtekel
 
 ## DOCUMENTATION
 - [JamesM's kernel development tutorials](http://www.jamesmolloy.co.uk/tutorial_html/1.-Environment%20setup.html),
