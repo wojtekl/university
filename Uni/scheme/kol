@@ -1,0 +1,40 @@
+;Zadanie1
+(define (wieksze5 arg)
+  (if(> arg 5) #t ;true
+     #f))         ;false
+
+(define (przechowaj fun lista)
+  (cond                          ;cond- instrukcja wqarunkowa
+    ((null? lista) '())
+    ((fun (car lista)) (cons (car lista) (przechowaj fun (cdr lista))))
+
+    (else (przechowaj fun (cdr lista)))))
+
+(przechowaj wieksze5 (list 1 8 2 9 5))
+;Zadanie2
+
+(define (stworz-dodaj arg)
+  (lambda (x) (+ x arg)))
+
+((stworz-dodaj 3) 5)
+;Zadanie3
+
+(define (zadanie3 lista)
+    (if(null? lista)
+       '()
+      (cons (przechowaj odd? (car lista)) (zadanie3 (cdr lista))))) ;odd- wyrażenie warunkowe(nieparzysty),
+                                                                    ;cons -- dwuargumentowy konstruktor pary
+(zadanie3 (list '(1 5 4 6) '(1 2 3 4) '(7 9 11 12)))
+
+
+(define (przechowaj-spelniajace-predykat lst pred)
+        (if(null? lst) '()
+        (if(pred (car lst)) (car lst) (przechowaj-spelniajace-predykat
+(cdr lst) pred))
+        )
+)
+(przechowaj-spelniajace-predykat '(1 2 3) (lambda (x) (if(> x 2) #t #f)))
+
+(define (stworz-dodaj x) (lambda (y) (+ x y)))
+((stworz-dodaj 3)5)
+

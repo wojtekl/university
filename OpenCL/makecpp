@@ -1,0 +1,5 @@
+#!/bin/bash
+
+wynik=$(echo $1 | sed -e "s/\..*//")
+g++ --std=c++17 --pedantic -Wall -Wextra -I CL/.. $1 -o $wynik -lOpenCL
+
