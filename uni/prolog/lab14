@@ -1,0 +1,42 @@
+kobieta(telimena).
+kobieta(anastazja).
+kobieta(penelopa).
+kobieta(zenobia).
+mezczyzna(protazy).
+mezczyzna(gerwazy).
+mezczyzna(serwacy).
+mezczyzna(zenon).
+matka(anastazja, telimena).
+matka(zenobia, penelopa).
+matka(penelopa, anastazja).
+ojciec(protazy, gerwazy).
+ojciec(protazy, serwacy).
+ojciec(serwacy, zenon).
+jest_kobieta(X) :- kobieta(X).
+wuj(X, Y) :- ojciec(Z1, Y), ojciec(Z2, Z1), ojciec(Z2, X).
+babcia(X, Y) :- matka(Z, Y), matka(X, Z).
+rodzic(X, Y) :- matka(X, Y).
+brat(X, Y) :- ojciec(Z, X), ojciec(Z, Y).
+przodek(X, Y) :- matka(Z1, Y), matka(Z2, Z1), matka(X, Z2).
+
+Zastanawiam się jak zrobić to bardziej szczegółowo chociażby w
+przypadku rodzica czy babci. Czy jest możliwość wprowadzenia warunków?
+Doczytałem, że istnieje operator alternatywy: OR ale odradza się
+stosowanie go.
+
+
+Zrobiłem jeszcze te zadania z Prologa z laboratorium 14:
+
+dlugosclisty([_|X], D) :- dlugosclisty(X, Dl), D is Dl + 1, !.
+dlugosclisty(_, 0).
+fibonacci(N, X) :- N>2, N1 is N-1, N2 is N-2, fibonacci(N1, Y),
+fibonacci(N2, Z), X is Y + Z.
+fibonacci(1, 0).
+fibonacci(2, 1).
+znajdz(N, [_|Y], El) :- N>1, N1 is N-1, znajdz(N1, Y, El).
+znajdz(1, [X|_], X).
+
+Czy ten wykrzyknik przy predykacie dla długości listy jest konieczny?
+
+Jest konieczny, blokuje nawroty. Niech Pan zresztą zobaczy co się stanie, gdy zostanie usunięty wykrzyknik.
+
