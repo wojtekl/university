@@ -1,0 +1,23 @@
+*** Creating Trace Output File 'kluchaos.tra' Ok.
+### Preparing for ADS-LD.
+### Creating ADS-LD Command Line
+### List of Objects: adding '"startup.o"'
+### List of Objects: adding '"kluchaos.o"'
+### List of Objects: adding '"magazyn.o"'
+### List of Objects: adding '"semafor.o"'
+### List of Objects: adding '"zadania.o"'
+### ADS-LD Command completed:
+--device DARMP "startup.o" "kluchaos.o" "magazyn.o" "semafor.o" "zadania.o" --strict --scatter "kluchaos.sct" 
+--autoat --summary_stderr --info summarysizes --map --xref --callgraph --symbols 
+--info sizes --info totals --info unused --info veneers 
+ --list ".\kluchaos.map" -o "kluchaos.axf"### Preparing Environment (PrepEnvAds)
+### ADS-LD Output File: 'kluchaos.axf'
+### ADS-LD Command File: 'kluchaos.lnp'
+### Checking for dirty Components...
+### Creating CmdFile 'kluchaos.lnp', Handle=0x00000298
+### Writing '.lnp' file
+### ADS-LD Command file 'kluchaos.lnp' is ready.
+### ADS-LD: About to start ADS-LD Thread.
+### ADS-LD: executed with 0 errors
+### Updating obj list
+### LDADS_file() completed.
