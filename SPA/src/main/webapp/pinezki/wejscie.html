@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <script src="Tlumaczenie/wejscie.js"></script>
+    <script type="text/javascript">tlumaczenie("pl")</script>
+    <title> Portal do systemu &ndash; Pinezki &ndash; </title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-" crossorigin="anonymous">
+    
+    <!--[if lte IE 8]>
+        <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/grids-responsive-old-ie-min.css">
+    <![endif]-->
+    <!--[if gt IE 8]><!-->
+        <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/grids-responsive-min.css">
+    <!--<![endif]-->
+    
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+    
+        <!--[if lte IE 8]>
+            <link rel="stylesheet" href="css/layouts/marketing-old-ie.css">
+        <![endif]-->
+        <!--[if gt IE 8]><!-->
+            <link rel="stylesheet" href="css/layouts/marketing.css">
+        <!--<![endif]-->
+</head>
+<body>
+    <div class="content">
+        <h2 class="content-head is-center">Wypełnij formularz, aby wejść do systemu.</h2>
+
+        <div class="pure-g">
+            <div class="l-box-lrg pure-u-1 pure-u-md-2-5">
+                <form id="form-wejscie" class="pure-form pure-form-stacked">
+                    <fieldset>
+
+                        <label for="email">Adres e-mail</label>
+                        <input id="email" type="email" placeholder="Adres e-mail">
+
+                        <label for="haslo">Hasło</label>
+                        <input id="haslo" type="password" placeholder="Hasło">
+
+                        <button type="submit" class="pure-button">Wejdź</button>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="l-box-lrg pure-u-1 pure-u-md-3-5">
+                <h4>Problem z wejściem?</h4>
+                <p>
+                    Prosimy o kontakt z administracją. Adres znajduje się na stronie głównej
+                    systemu.
+                </p>
+
+                <h4></h4>
+                <p>
+                    
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+
+
+
+
+<script src="WidokModel/serwer.js"></script>
+<script type="text/javascript">
+  if("true" === document.cookie.split("=")[1]){
+    window.location.href = Serwer.ADRES_INDEX;
+  };
+  function trimAll(text){
+    return text.replace(/\s/g, '');
+  };
+  document.getElementById("form-wejscie").onsubmit = function(e){
+    e.preventDefault();
+    var email = trimAll(document.getElementById("email").value);
+    if(
+      (7 > email.length) || 
+      (255 < email.length)
+    ){
+      return alert('Wprowadź poprawny adres!');
+    }
+    var haslo = document.getElementById("haslo").value;
+    if(
+      (8 > haslo.length) || 
+      (40 < haslo.length) || 
+      (/\s/g.test(haslo))
+    ){
+      return alert("Wprowadź poprawne hasło!");
+    }
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function(){
+      if((4 === xhttp.readyState) && (200 === xhttp.status)){
+        var wynik = JSON.parse(xhttp.responseText);
+        if(-1 < wynik[0]){
+          document.cookie = "obecny=true";
+          window.location.href = Serwer.ADRES_INDEX;
+        } else{
+          alert("Sprawdź swoje dane oraz czy konto zostało aktywowane!");
+        }
+      }
+    };
+    xhttp.open("PUT", Serwer.ADRES_KONTO, true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhttp.send("email=" + email + "&haslo=" + haslo);
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pl" class="pelny">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <title> Mapa &ndash; Pinezki &ndash; </title>
+    <script src="Tlumaczenie/layout.js"></script>
+    <script src="Tlumaczenie/mapa.js"></script>
+    <script src="https://unpkg.com/mithril/mithril.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-" crossorigin="anonymous">
+    
+    
+    
+        <!--[if lte IE 8]>
+            <link rel="stylesheet" href="css/layouts/side-menu-old-ie.css">
+        <![endif]-->
+        <!--[if gt IE 8]><!-->
+            <link rel="stylesheet" href="css/layouts/side-menu.css">
+        <!--<![endif]-->
+  <link rel="stylesheet" href="css/mapa.css">
+</head>
+<body class="pelny">
+
+
+
+
+
+
+<div id="layout" class="pelny">
+    <!-- Menu toggle -->
+    <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+    </a>
+
+    <div id="menu">
+        <div class="pure-menu"></div>
+    </div>
+
+    <div id="main" class="pelny">
+        <div id="mapa"></div>
+        <div id="widok"><div>
+        <div id="widok-layout"></div>
+    </div>
+</div>
+
+
+
+
+<script src="js/ui.js"></script>
+
+<script src="WidokModel/serwer.js"></script>
+<script src="WidokModel/layout.js"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOiRTGyJ2BY5zLBvUQRrqigi5kqQW1tm8&callback=initMap" async defer></script>
+<script>
+var map;
+function initMap()
+{
+  map = new google.maps.Map(document.getElementById('mapa'), {center: {lat: 0.0, lng: 0.0}, zoom: 15});
+}
+</script>
+
+<script src="WidokModel/mapa.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net.hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="com.rhcloud.javawojtekel.pinezki.ModelOgloszenie" table="Ogloszenia">
+        <id name="identyfikator" type="int" column="identyfikator">
+            <generator class="native" />
+        </id>
+        <property name="tytul" column="tytul" type="java.lang.String" not-null="true" length="255" />
+        <property name="tresc" column="tresc" type="java.lang.String" not-null="true" />
+        <property name="jezyk" column="jezyk" type="java.lang.String" not-null="true" length="255" />
+        <property name="czasAktualizacji" column="CzasAktualizacji" type="long" not-null="true" />
+    </class>
+</hibernate-mapping>

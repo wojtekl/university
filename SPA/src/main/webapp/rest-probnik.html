@@ -1,0 +1,79 @@
+<!--
+# Darmowa do użytku niekomercyjnego.
+# Prawa autorskie należą do Wojciecha Leśniaka
+# Nowy Rok 2015
+# https://java-wojtekel.rhcloud.com/pinezki
+-->
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>REST próbnik</title>
+    </head>
+    <body >
+        <div style="width: 300px; margin: auto;">
+            <table>
+                <tr>
+                    <td>Rodzaj żądania:</td>
+                    <td><input type="text" id="rodzaj-zadania" value="GET" /></td>
+                </tr>
+                <tr>
+                    <td>Adres zasobu:</td>
+                    <td><input type="text" id="adres-zasobu" /></td>
+                </tr>
+                <tr>
+                    <td>Parametry:</td>
+                    <td><input type="text" id="parametry" /></td>
+                </tr>
+                <tr>
+                    <td>
+                    </td>
+                    <td style="text-align: center;">
+                        <button onclick="zadanie()">Wykonaj</button>
+                    </td>
+                </tr>
+            </table>
+            <div id="wynik"></div>
+        </div>
+        <script typ="text/javascript">
+function Stworz_XMLHttpRequest(){
+    if(window.XMLHttpRequest){
+        return new XMLHttpRequest();
+    } else if(window.ActiveXObject){
+        var msxmls = new Array(
+            'Msxml2.XMLHTTP.5.0', 'Msxml2.XMLHTTP.4.0', 
+            'Msxml2.XMLHTTP.3.0', 'Msxml2.XMLHTTP', 
+            'Microsoft.XMLHTTP');
+        for(var i = 0; i < msxmls.length; i++){
+            try{
+                return new ActiveXObject(msxmls[i]);
+            } catch(e){ }
+        }
+    } else {
+        throw new Error('Nie mogę stworzyć zapytania asynchronicznego :(');
+    }
+}
+            
+var xmlhttp = Stworz_XMLHttpRequest();
+            
+function zadanie(){
+    if(xmlhttp){
+        var rodzaj_zadania = document.getElementById("rodzaj-zadania").value;
+        var adres_zasobu = document.getElementById("adres-zasobu").value;
+        var parametry = document.getElementById("parametry").value;
+        xmlhttp.open(rodzaj_zadania, adres_zasobu, true);
+        xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xmlhttp.setRequestHeader("Content-length", parametry.length);
+        xmlhttp.setRequestHeader("Connection", "close");
+        xmlhttp.onreadystatechange = function(){
+            if(4 == xmlhttp.readyState){
+                if(200 == xmlhttp.status){
+                    document.getElementById('wynik').innerHTML = xmlhttp.responseText;
+                }
+            }
+        };
+        xmlhttp.send(parametry);
+    }
+}
+        </script>
+    </body>
+</html>

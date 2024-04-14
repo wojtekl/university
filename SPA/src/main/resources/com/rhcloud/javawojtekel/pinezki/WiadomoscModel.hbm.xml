@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net.hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+    <class name="com.rhcloud.javawojtekel.pinezki.WiadomoscModel" table="Wiadomosci">
+        <id name="identyfikator" type="int">
+            <column name="identyfikator" />
+            <generator class="identity" />
+        </id>
+        <many-to-one name="uzytkownik" column="uzytkownik" class="com.rhcloud.javawojtekel.pinezki.ModelUzytkownik" />
+        <many-to-one name="grupa" column="grupa" class="com.rhcloud.javawojtekel.pinezki.GrupaModel" />
+        <property name="tresc" type="java.lang.String">
+            <column name="tresc" />
+        </property>
+        <property name="czas" type="java.util.Date">
+            <column name="czas" />
+        </property>
+    </class>
+</hibernate-mapping>
